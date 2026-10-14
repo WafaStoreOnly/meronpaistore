@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PRICE, PRESET, calcPrice, calcGpAmount,
   getSessionId, getSavedUsername, saveUsername, playNotif,
-} from "@/lib/lib";
+} from "../lib/lib";
 
 type Tab = "username" | "gamepass" | "gift" | "login";
 type Panel = "order" | "chat" | "voucher" | "riwayat" | "cek";
@@ -26,9 +26,7 @@ export default function Home() {
   const [voucher, setVoucher] = useState<{ code: string; discount: number } | null>(null);
 
   useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((d) => setSettings(d.settings || {}));
+    fetch("/api/settings").then((r) => r.json()).then((d) => setSettings(d.settings || {}));
   }, []);
 
   const basePrice = tab === "login" ? 0 : calcPrice(tab as any, robux);
@@ -166,7 +164,7 @@ export default function Home() {
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           placeholder="Meronpai123"
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg outline-none"
                         />
                       </div>
 
@@ -187,10 +185,7 @@ export default function Home() {
                         <input
                           type="number"
                           value={robux || ""}
-                          onChange={(e) => {
-                            setRobux(parseInt(e.target.value) || 0);
-                            setVoucher(null);
-                          }}
+                          onChange={(e) => { setRobux(parseInt(e.target.value) || 0); setVoucher(null); }}
                           className="w-full px-4 py-3 border border-gray-200 rounded-lg outline-none"
                         />
                       </div>
@@ -203,9 +198,7 @@ export default function Home() {
                               type="button"
                               onClick={() => { setRobux(p); setVoucher(null); }}
                               className={`py-2 rounded-lg text-xs font-semibold border ${
-                                robux === p
-                                  ? "bg-brand-600 text-white border-brand-600"
-                                  : "bg-white border-gray-200"
+                                robux === p ? "bg-brand-600 text-white border-brand-600" : "bg-white border-gray-200"
                               }`}
                             >
                               {p.toLocaleString("id-ID")}
@@ -240,8 +233,7 @@ export default function Home() {
 
                       {tab === "gamepass" && robux > 0 && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                          ℹ️ Gamepass yang harus dibuat:{" "}
-                          <strong>{gpAmount.toLocaleString("id-ID")} Robux</strong>
+                          ℹ️ Gamepass yang harus dibuat: <strong>{gpAmount.toLocaleString("id-ID")} Robux</strong>
                         </div>
                       )}
 
@@ -294,9 +286,7 @@ export default function Home() {
                         )}
                         <div className="flex justify-between pt-2 border-t border-brand-100 font-bold">
                           <span>Total</span>
-                          <span className="text-brand-600 text-lg">
-                            Rp{finalPrice.toLocaleString("id-ID")}
-                          </span>
+                          <span className="text-brand-600 text-lg">Rp{finalPrice.toLocaleString("id-ID")}</span>
                         </div>
                       </div>
 
@@ -351,11 +341,9 @@ function Leaderboard() {
       </div>
       {leaders.map((l, i) => (
         <div key={l.username} className="flex items-center gap-3 px-5 py-3 border-t border-gray-50">
-          <div
-            className={`w-8 h-8 flex items-center justify-center font-bold text-sm rounded-full ${
-              i < 3 ? "bg-brand-100 text-brand-700" : "bg-gray-100"
-            }`}
-          >
+          <div className={`w-8 h-8 flex items-center justify-center font-bold text-sm rounded-full ${
+            i < 3 ? "bg-brand-100 text-brand-700" : "bg-gray-100"
+          }`}>
             {i < 3 ? medals[i] : i + 1}
           </div>
           <div className="flex-1 min-w-0">
@@ -466,9 +454,7 @@ function ChatPanel() {
     <section className="max-w-2xl mx-auto px-4 py-6">
       <div className="bg-white rounded-2xl border border-brand-100 overflow-hidden flex flex-col" style={{ height: "70vh" }}>
         <div className="p-4 border-b border-brand-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center text-white font-bold">
-            A
-          </div>
+          <div className="w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
           <div>
             <p className="font-bold text-sm">Admin MeronpaiStore</p>
             <p className="text-xs text-green-600">● Online</p>
@@ -476,17 +462,13 @@ function ChatPanel() {
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {messages.length === 0 && (
-            <p className="text-center text-gray-400 text-sm py-8">
-              Halo {username}! Ada yang bisa dibantu?
-            </p>
+            <p className="text-center text-gray-400 text-sm py-8">Halo {username}! Ada yang bisa dibantu?</p>
           )}
           {messages.map((m) => (
             <div key={m.id} className={`flex ${m.direction === "in" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl overflow-hidden text-sm ${
-                  m.direction === "in" ? "bg-brand-600 text-white" : "bg-gray-100"
-                }`}
-              >
+              <div className={`max-w-[75%] rounded-2xl overflow-hidden text-sm ${
+                m.direction === "in" ? "bg-brand-600 text-white" : "bg-gray-100"
+              }`}>
                 {m.attachment_url && (
                   <a href={m.attachment_url} target="_blank" rel="noreferrer">
                     <img src={m.attachment_url} className="max-w-[250px]" />
@@ -500,9 +482,7 @@ function ChatPanel() {
         </div>
         <div className="p-3 border-t flex gap-2">
           <input ref={fileRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
-          <button onClick={() => fileRef.current?.click()} className="w-11 h-11 bg-gray-100 rounded-xl text-lg">
-            📎
-          </button>
+          <button onClick={() => fileRef.current?.click()} className="w-11 h-11 bg-gray-100 rounded-xl text-lg">📎</button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -601,11 +581,7 @@ function RiwayatPanel() {
           placeholder="Username Roblox"
           className="flex-1 px-4 py-3 border border-gray-200 rounded-lg outline-none"
         />
-        <button
-          onClick={search}
-          disabled={loading}
-          className="bg-brand-600 text-white px-6 rounded-lg font-semibold"
-        >
+        <button onClick={search} disabled={loading} className="bg-brand-600 text-white px-6 rounded-lg font-semibold">
           {loading ? "..." : "Cari"}
         </button>
       </div>
