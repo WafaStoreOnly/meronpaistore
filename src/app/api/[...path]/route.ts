@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { sb, genDynamicQRIS, validateVoucher, QRIS_STATIC, getSettings } from "@/lib/lib";
+import { sb, genDynamicQRIS, validateVoucher, QRIS_STATIC, getSettings } from "../../../lib/lib";
 
 const isAdmin = (r: NextRequest) => r.headers.get("x-admin-key") === process.env.ADMIN_KEY;
 
-// ============ GET ============
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
   const p = params.path || [];
   const route = p.join("/");
   const url = new URL(req.url);
 
-  // GET /api/settings
   if (route === "settings") {
     const s = await getSettings();
     return NextResponse.json({ settings: s });
   }
 
-  // GET /api/leaderboard
   if (route === "leaderboard") {
     const { data } = await sb.from("orders").select("username, robux_amount").in("status", ["paid", "delivered"]);
     const map = new Map<string, any>();
@@ -27,13 +24,10 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
       c.total_orders += 1;
       map.set(k, c);
     }
-    const top = Array.from(map.values())
-      .sort((a, b) => b.total_robux - a.total_robux)
-      .slice(0, 10);
+    const top = Array.from(map.values()).sort((a, b) => b.total_robux - a.total_robux).slice(0, 10);
     return NextResponse.json({ leaderboard: top });
   }
 
-  // GET /api/voucher/active
   if (route === "voucher/active") {
     const now = new Date().toISOString();
     const { data } = await sb
@@ -45,14 +39,12 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
     return NextResponse.json({ vouchers: data || [] });
   }
 
-  // GET /api/order/[invoice]
   if (p[0] === "order" && p[1]) {
     const { data } = await sb.from("orders").select("*").eq("invoice", p[1]).single();
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ order: data });
   }
 
-  // GET /api/orders-by-username?username=xxx
   if (route === "orders-by-username") {
     const u = url.searchParams.get("username");
     if (!u) return NextResponse.json({ error: "username wajib" }, { status: 400 });
@@ -65,7 +57,6 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
     return NextResponse.json({ orders: data || [] });
   }
 
-  // GET /api/qris/[invoice]
   if (p[0] === "qris" && p[1]) {
     const { data: o } = await sb
       .from("orders")
@@ -85,32 +76,18 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
     });
 
     return new NextResponse(buf as any, {
-      headers: {
-        "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=3600",
-      },
+      headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" },
     });
   }
 
-  // GET /api/chat/messages?session=xxx
   if (route === "chat/messages") {
     const s = url.searchParams.get("session");
     if (!s) return NextResponse.json({ error: "session wajib" }, { status: 400 });
-    const { data } = await sb
-      .from("chats")
-      .select("*")
-      .eq("session_id", s)
-      .order("created_at");
-    await sb
-      .from("chats")
-      .update({ read: true })
-      .eq("session_id", s)
-      .eq("direction", "out")
-      .eq("read", false);
+    const { data } = await sb.from("chats").select("*").eq("session_id", s).order("created_at");
+    await sb.from("chats").update({ read: true }).eq("session_id", s).eq("direction", "out").eq("read", false);
     return NextResponse.json({ messages: data || [] });
   }
 
-  // GET /api/chat/unread-count
   if (route === "chat/unread-count") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { count } = await sb
@@ -121,50 +98,27 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
     return NextResponse.json({ count: count || 0 });
   }
 
-  // GET /api/admin/orders
   if (route === "admin/orders") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data } = await sb
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const { data } = await sb.from("orders").select("*").order("created_at", { ascending: false }).limit(200);
     return NextResponse.json({ orders: data || [] });
   }
 
-  // GET /api/admin/voucher
   if (route === "admin/voucher") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data } = await sb
-      .from("vouchers")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await sb.from("vouchers").select("*").order("created_at", { ascending: false });
     return NextResponse.json({ vouchers: data || [] });
   }
 
-  // GET /api/admin/chat atau ?session=xxx
   if (route === "admin/chat") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const s = url.searchParams.get("session");
     if (s) {
-      const { data } = await sb
-        .from("chats")
-        .select("*")
-        .eq("session_id", s)
-        .order("created_at");
-      await sb
-        .from("chats")
-        .update({ read: true })
-        .eq("session_id", s)
-        .eq("direction", "in")
-        .eq("read", false);
+      const { data } = await sb.from("chats").select("*").eq("session_id", s).order("created_at");
+      await sb.from("chats").update({ read: true }).eq("session_id", s).eq("direction", "in").eq("read", false);
       return NextResponse.json({ messages: data || [] });
     }
-    const { data } = await sb
-      .from("chats")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1000);
+    const { data } = await sb.from("chats").select("*").order("created_at", { ascending: false }).limit(1000);
     const map = new Map<string, any>();
     for (const c of data || []) {
       if (!map.has(c.session_id)) {
@@ -185,11 +139,9 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
   return NextResponse.json({ error: "Not found", route }, { status: 404 });
 }
 
-// ============ POST ============
 export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
   const route = (params.path || []).join("/");
 
-  // POST /api/order
   if (route === "order") {
     const b = await req.json();
     if (!b.username || !b.robuxAmount || !b.price || !b.method)
@@ -244,14 +196,12 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
     return NextResponse.json({ invoice, id: order.id });
   }
 
-  // POST /api/voucher/validate
   if (route === "voucher/validate") {
     const { code, price } = await req.json();
     const r = await validateVoucher(code, price);
     return NextResponse.json(r);
   }
 
-  // POST /api/upload — bukti transfer
   if (route === "upload") {
     const fd = await req.formData();
     const file = fd.get("file") as File;
@@ -276,35 +226,25 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
     return NextResponse.json({ proofUrl: u.publicUrl });
   }
 
-  // POST /api/chat/send
   if (route === "chat/send") {
     const { sessionId, username, message } = await req.json();
-    if (!sessionId || !message)
-      return NextResponse.json({ error: "Data kurang" }, { status: 400 });
+    if (!sessionId || !message) return NextResponse.json({ error: "Data kurang" }, { status: 400 });
     const { data } = await sb
       .from("chats")
-      .insert({
-        session_id: sessionId,
-        username: username || null,
-        direction: "in",
-        message,
-      })
+      .insert({ session_id: sessionId, username: username || null, direction: "in", message })
       .select()
       .single();
     return NextResponse.json({ ok: true, message: data });
   }
 
-  // POST /api/chat/upload — gambar di chat
   if (route === "chat/upload") {
     const fd = await req.formData();
     const file = fd.get("file") as File;
     const sessionId = fd.get("sessionId") as string;
     const username = fd.get("username") as string;
     const admin = fd.get("isAdmin") === "true";
-    if (admin && !isAdmin(req))
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!file || !sessionId)
-      return NextResponse.json({ error: "Data kurang" }, { status: 400 });
+    if (admin && !isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!file || !sessionId) return NextResponse.json({ error: "Data kurang" }, { status: 400 });
 
     const ext = file.name.split(".").pop() || "jpg";
     const filename = `chat/${sessionId}-${Date.now()}.${ext}`;
@@ -328,17 +268,14 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
     return NextResponse.json({ ok: true, message: data });
   }
 
-  // POST /api/admin/chat — balas admin
   if (route === "admin/chat") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { sessionId, message } = await req.json();
-    if (!sessionId || !message)
-      return NextResponse.json({ error: "Data kurang" }, { status: 400 });
+    if (!sessionId || !message) return NextResponse.json({ error: "Data kurang" }, { status: 400 });
     await sb.from("chats").insert({ session_id: sessionId, direction: "out", message });
     return NextResponse.json({ ok: true });
   }
 
-  // POST /api/admin/voucher — bikin voucher
   if (route === "admin/voucher") {
     if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const b = await req.json();
@@ -358,7 +295,6 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   return NextResponse.json({ error: "Not found", route }, { status: 404 });
 }
 
-// ============ PATCH ============
 export async function PATCH(req: NextRequest, { params }: { params: { path: string[] } }) {
   if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const route = (params.path || []).join("/");
@@ -391,7 +327,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { path: stri
   return NextResponse.json({ error: "Not found", route }, { status: 404 });
 }
 
-// ============ DELETE ============
 export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
   if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const url = new URL(req.url);
