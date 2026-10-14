@@ -1,22 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 
-// ============ SUPABASE ============
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
+
 export const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
-// ============ QRIS STATIC (dari Meronpai store) ============
 export const QRIS_STATIC =
   process.env.QRIS_STATIC_STRING ||
   "00020101021126570011ID.DANA.WWW011893600915303219960802090321996080303UMI51440014ID.CO.QRIS.WWW0215ID10265309928030303UMI5204594553033605802ID5914Meronpai store6013Kab. Wonogiri61055765263043D23";
 
-// ============ PRICING ============
 export const PRICE = { username: 180, gamepass: 160, gift: 100 } as const;
 export const PRESET = [100, 200, 300, 500, 800, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000];
 export const calcPrice = (m: keyof typeof PRICE, r: number) => Math.round(r * PRICE[m]);
 export const calcGpAmount = (r: number) => Math.ceil(r / 0.7);
 
-// ============ QRIS DINAMIS ============
 function parseTLV(s: string) {
   const r: { tag: string; value: string }[] = [];
   let i = 0;
@@ -80,7 +77,6 @@ export function genDynamicQRIS(staticQRIS: string, amount: number): string {
   return withoutCRC + crc16(withoutCRC);
 }
 
-// ============ VOUCHER ============
 export async function validateVoucher(code: string, price: number) {
   if (!code) return { valid: false as const, error: "Kode kosong" };
   try {
@@ -101,11 +97,10 @@ export async function validateVoucher(code: string, price: number) {
   }
 }
 
-// ============ SETTINGS ============
 export const DEFAULT_SETTINGS = {
   store_name: "MeronpaiStore",
   hero_title: "Top Up Robux Murah & Cepat",
-  hero_subtitle: "Pilih metode, isi form, bayar via QRIS. Robux langsung masuk.",
+  hero_subtitle: "Pilih metode, isi form, bayar via QRIS.",
   bg_image_url: "/bg-home.png",
   bg_opacity: "15",
 };
@@ -122,7 +117,6 @@ export async function getSettings() {
   }
 }
 
-// ============ CHAT HELPERS (client-side) ============
 export function getSessionId(): string {
   if (typeof window === "undefined") return "";
   let s = localStorage.getItem("chat_session");
